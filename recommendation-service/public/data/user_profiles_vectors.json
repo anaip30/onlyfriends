@@ -1,0 +1,170 @@
+{
+  "fields": [
+    "name",
+    "age",
+    "city",
+    "interests"
+  ],
+  "values": [
+    [
+      "Jona",
+      24,
+      "Labin",
+      [
+        "hrana, filmovi, anime, muzika"
+      ]
+    ],
+    [
+      "Roberto",
+      24,
+      "Pula",
+      [
+        "knjige, filmovi, auti"
+      ]
+    ],
+    [
+      "straaing",
+      40,
+      "straaing",
+      [
+        "straaing"
+      ]
+    ],
+    [
+      "Leonardo",
+      27,
+      "Labin",
+      [
+        "knjige, filmovi "
+      ]
+    ],
+    [
+      "Igor",
+      23,
+      "Pazin",
+      [
+        "hrana, filmovi"
+      ]
+    ],
+    [
+      "Aleksandar",
+      40,
+      "Raša",
+      [
+        "knjige, filmovi, auti"
+      ]
+    ],
+    [
+      "Mirna",
+      22,
+      "Labin",
+      [
+        "knjige, filmovi"
+      ]
+    ],
+    [
+      "Eugen",
+      26,
+      "Labin",
+      [
+        " auti"
+      ]
+    ],
+    [
+      "Randi",
+      25,
+      "Pula",
+      [
+        "knjige, filmovi, motori"
+      ]
+    ],
+    [
+      "Enis",
+      24,
+      "Rijeka",
+      [
+        "hrana, auti, muzika"
+      ]
+    ],
+    [
+      "Darko",
+      33,
+      "Pula",
+      [
+        "knjige, filmovi, motori"
+      ]
+    ],
+    [
+      "Roberta",
+      24,
+      "Pula",
+      [
+        "knjige, filmovi, auti"
+      ]
+    ],
+    [
+      "Lana",
+      23,
+      "Labin",
+      [
+        "Knjige"
+      ]
+    ],
+    [
+      "Robert",
+      27,
+      "Puls",
+      [
+        "hrana, muzika, filmovi"
+      ]
+    ],
+    [
+      "Boris",
+      25,
+      "Pula",
+      [
+        "knjige, filmovi, auti"
+      ]
+    ],
+    [
+      "Romeo",
+      27,
+      "Puls",
+      [
+        "hrana, muzika"
+      ]
+    ],
+    [
+      "Anai",
+      23,
+      "Raša",
+      [
+        "knjige, filmovi, auti "
+      ]
+    ],
+    [
+      "Karlo",
+      24,
+      "Rijeka",
+      [
+        "hrana, filmovi, muzika"
+      ]
+    ],
+    [
+      "Filip",
+      23,
+      "Pula",
+      [
+        "knjige, filmovi, auti"
+      ]
+    ],
+    [
+      "David",
+      23,
+      "Umag",
+      [
+        "knjige, filmovi"
+      ]
+    ]
+  ]
+}

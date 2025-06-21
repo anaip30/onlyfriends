@@ -1,0 +1,54 @@
+services:
+  user-service:
+    build:
+      context: ./user-service
+      dockerfile: Dockerfile
+    image: user-service:latest
+    ports:
+      - "8002:8002"
+    networks:
+      - onlyfriends-network
+
+  recommendation-service:
+    image: python:3.10-slim
+    working_dir: /app
+    volumes:
+      - ./recommendation-service:/app
+    command: ["python", "main.py"]
+    ports:
+      - "8003:8003"
+    networks:
+      - onlyfriends-network
+
+  search-service:
+    build:
+      context: ./search-service
+      dockerfile: Dockerfile
+    image: search-service:latest
+    ports:
+      - "8004:8004"
+    networks:
+      - onlyfriends-network
+
+  weaviate:
+    image: cr.weaviate.io/semitechnologies/weaviate:1.31.0
+    ports:
+      - "8080:8080"
+      - "50051:50051"
+    environment:
+      - QUERY_DEFAULTS_LIMIT=20
+      - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
+      - PERSISTENCE_DATA_PATH=/var/lib/weaviate
+      - DEFAULT_VECTORIZER_MODULE=none
+      - ENABLE_MODULES=text2vec-transformers
+    volumes:
+      - weaviate_data:/var/lib/weaviate
+    networks:
+      - onlyfriends-network
+
+networks:
+  onlyfriends-network:
+    driver: bridge
+
+volumes:
+  weaviate_data:

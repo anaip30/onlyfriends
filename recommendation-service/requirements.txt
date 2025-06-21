@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+httpx
+bcrypt
+jwt
+boto3
+PyJWT
+dotenv 
+typing
+numpy
+json
+weaviate-client>=3.26.7,<4.0.0

@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+httpx
+bcrypt
+jwt
+boto3
+PyJWT
+dotenv 
+typing
