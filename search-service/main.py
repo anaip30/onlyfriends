@@ -25,7 +25,7 @@ def verifyToken(
         payload = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         return payload.get("sub")
     except jwt.PyJWTError:
-        raise HTTPException(status_code=401, detail="Invalid or expired token")
+        raise HTTPException(401,"Invalid or expired token")
 
 
 dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
@@ -39,7 +39,7 @@ async def searchByCity(city: str):
     )
     items = resp.get("Items", [])
     if not items:
-        raise HTTPException(status_code=404, detail="No users in this city")
+        raise HTTPException(404, "Nema korisnika u tom gradu")
     return {"users": items}
 
 @app.get("/search/age/{min_age}/{max_age}",dependencies=[Depends(verifyToken)])
@@ -48,22 +48,9 @@ async def searchByAge(min_age: int, max_age: int):
     items = resp.get("Items", [])
     users = [u for u in items if min_age <= u.get("age", 0) <= max_age]
     if not users:
-        raise HTTPException(status_code=404, detail="No users in this age range")
+        raise HTTPException(404, "Nema korisnika u tom rangu ")
     return {"users": users}
 
-@app.get("/search/interests",dependencies=[Depends(verifyToken)])
-async def searchByInterests(
-    interests: List[str] = Query(..., description="Lista interesa za pretragu")
-):
-    resp = table.scan()
-    items = resp.get("Items", [])
-    users = [
-        u for u in items
-        if isinstance(u.get("interests"), list) and any(i in u["interests"] for i in interests)
-    ]
-    if not users:
-        raise HTTPException(status_code=404, detail="No users with these interests")
-    return {"users": users}
 
 if __name__ == "__main__":
     import uvicorn

@@ -3,51 +3,58 @@ services:
     build:
       context: ./user-service
       dockerfile: Dockerfile
-    image: user-service:latest
+    image: onlyfriends-user
     ports:
       - "8002:8002"
     networks:
-      - onlyfriends-network
+      - onlyfriends
 
-  recommendation-service:
-    image: python:3.10-slim
-    working_dir: /app
-    volumes:
-      - ./recommendation-service:/app
-    command: ["python", "main.py"]
-    ports:
-      - "8003:8003"
+  importer-service:
+    build:
+      context: ./recommendation-service 
+      dockerfile: Dockerfile
+    image: onlyfriends-recommendation
+    depends_on:
+      - weaviate      
+      - user-service 
+    environment:
+      - AWS_REGION=${AWS_REGION}
+      - DYNAMODB_TABLE=${DYNAMODB_TABLE}
+      - WEAVIATE_HOST=weaviate 
+      - WEAVIATE_HTTP_PORT=8080
+      - WEAVIATE_GRPC_PORT=50051
+    command: ["python", "importingData.py"] 
     networks:
-      - onlyfriends-network
+      - onlyfriends
 
   search-service:
     build:
       context: ./search-service
       dockerfile: Dockerfile
-    image: search-service:latest
+    image: onlyfriends-search
     ports:
       - "8004:8004"
     networks:
-      - onlyfriends-network
+      - onlyfriends
 
   weaviate:
-    image: cr.weaviate.io/semitechnologies/weaviate:1.31.0
+    image: semitechnologies/weaviate:latest
     ports:
       - "8080:8080"
       - "50051:50051"
     environment:
       - QUERY_DEFAULTS_LIMIT=20
       - AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED=true
-      - PERSISTENCE_DATA_PATH=/var/lib/weaviate
       - DEFAULT_VECTORIZER_MODULE=none
-      - ENABLE_MODULES=text2vec-transformers
+      - TRANSFORMERS_INFERENCE_API=https://api-inference.huggingface.co/models/sentence-transformers/all-MiniLM-L6-v2
+      - HUGGINGFACE_API_KEY=${HUGGINGFACE_API_KEY}
     volumes:
       - weaviate_data:/var/lib/weaviate
     networks:
-      - onlyfriends-network
+      - onlyfriends
 
 networks:
-  onlyfriends-network:
+  onlyfriends:
     driver: bridge
 
 volumes:

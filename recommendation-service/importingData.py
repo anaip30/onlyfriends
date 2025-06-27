@@ -1,77 +1,75 @@
 from dotenv import load_dotenv
-import boto3
-import json
+import boto3, weaviate
 import os
+import uuid
 from pydantic import BaseModel
 from typing import List
+from weaviate.client import WeaviateClient
+from weaviate.connect.base import ConnectionParams
+from sentence_transformers import SentenceTransformer
 
 load_dotenv()
 
-AWS_REGION     = os.getenv("AWS_REGION")
-DYNAMODB_TABLE = os.getenv("DYNAMODB_TABLE")
-SECRET_KEY     = os.getenv("SECRET_KEY")
+AWS_REGION     = os.getenv("AWS_REGION", "eu-north-1")
+DYNAMODB_TABLE = os.getenv("DYNAMODB_TABLE", "users")
+WEAVIATE_HOST  = os.getenv("WEAVIATE_HOST", "localhost")
+WEAVIATE_PORT  = int(os.getenv("WEAVIATE_HTTP_PORT"))
+GRPC_PORT      = int(os.getenv("WEAVIATE_GRPC_PORT"))
 
-class UserProfile(BaseModel):
-    name: str
-    age: int
-    city: str
-    interests: List[str]
+conn = ConnectionParams.from_params(
+    http_host=WEAVIATE_HOST,
+    http_port=WEAVIATE_PORT,
+    http_secure=False,
+    grpc_host=WEAVIATE_HOST,
+    grpc_port=GRPC_PORT,
+    grpc_secure=False
+)
+client = WeaviateClient(connection_params=conn)
 
-field = ['name', 'age', 'city', 'interests']
+print("Spajanje na Weaviate")
+client.connect()
 
-def fetchAndSaveAllItemVectors():
+print("Ucitavanje modela.")
+model = SentenceTransformer("all-MiniLM-L6-v2")
 
-    dynamodb = boto3.resource("dynamodb", region_name=AWS_REGION)
-    table    = dynamodb.Table(DYNAMODB_TABLE) 
-    
-    items = []
-    response = table.scan()
-    items.extend(response.get('Items', []))
-    while 'LastEvaluatedKey' in response:
-        response = table.scan(ExclusiveStartKey=response['LastEvaluatedKey'])
-        items.extend(response.get('Items', []))
-  
-    if not items:
-        print("Tablica je prazna ili scan nije vratio ništa.")
-        return
-    
-    profiles = []
-    for raw in items:
-        try:
-            profile = UserProfile(**raw)
-            profiles.append(profile)
-        except Exception as e:
-            print(f"Preskačem nevaljani item {raw!r}: {e}")
+print("Hvatanje podataka")
+dynamo = boto3.resource("dynamodb", region_name=AWS_REGION)
+table  = dynamo.Table(DYNAMODB_TABLE)
+items  = []
+resp = table.scan()
+items.extend(resp["Items"])
+while "LastEvaluatedKey" in resp:
+    resp = table.scan(ExclusiveStartKey=resp["LastEvaluatedKey"])
+    items.extend(resp["Items"])
 
-    if not profiles:
-        print("Nije parsiran nijedan validan profil.")
-        return
+print(f"Found {len(items)} users in DynamoDB.")
 
-    fields = list(UserProfile.__fields__.keys())
+coll = client.collections.get("Users")
+print("Importanje u Weaviate.")
+usersAddedCount = 0
+with coll.batch.fixed_size(64) as batch:
+    for it in items:
+        requiredKeys = ["username", "name", "age", "city", "interests"]
+        if not all(key in it for key in requiredKeys):
+            print(f"⚠️  Preskačem korisnika jer mu nedostaju podaci: {it.get('username', 'Nepoznat username')}")
+            continue
 
-    valuesMatrix = []
-    for p in profiles:
-        d = p.dict()
-        row = []
-        for f in fields:
-            val = d[f]
-            row.append(val)
-        valuesMatrix.append(row)
+        text = f"age: {it['age']}; city: {it['city']}; interests: {', '.join(it['interests'])}"
+        vec  = model.encode(text).tolist()
+        user_uuid = str(uuid.uuid5(uuid.NAMESPACE_DNS, it["username"]))
 
-    out = {
-        "fields": fields,
-        "values": valuesMatrix
-    }
-    outDir = os.path.join(os.path.dirname(__file__), 'public', 'data')
-    os.makedirs(outDir, exist_ok=True)
-    out_path = os.path.join(outDir, 'user_profiles_vectors.json')
-    with open(out_path, 'w', encoding='utf-8') as f:
-        json.dump(out, f, ensure_ascii=False, indent=2)
+        batch.add_object(
+            properties={
+                "username":  it["username"],
+                "name":      it["name"],
+                "age":       int(it["age"]),
+                "city":      it["city"],
+                "interests": it["interests"],
+            },
+            vector=vec,
+            uuid=user_uuid,
+        )
+        usersAddedCount += 1
 
-    print(f"Vektori korisničkih profila spremljeni u {out_path}")
-
-if __name__ == "__main__":
-
-
-
-    fetchAndSaveAllItemVectors()
+print(f" Ubačeno {usersAddedCount} od {len(items)} pronađenih korisnika.")
+client.close()
