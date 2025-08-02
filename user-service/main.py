@@ -8,9 +8,6 @@ import jwt
 
 load_dotenv()
 
-AWS_REGION     = "eu-north-1"
-DYNAMODB_TABLE = "OnlyFriendUser"
-SECRET_KEY     = "onlyfriends-secret"
 
 app = FastAPI()
 
